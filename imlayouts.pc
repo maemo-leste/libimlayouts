@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: imlayouts library
+Description: imlayouts library
+Requires: glib-2.0
+Version: 1.5.14
+Libs: -L${libdir} -limlayouts
+Cflags: -I${includedir}
