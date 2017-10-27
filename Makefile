@@ -1,7 +1,7 @@
 all: libimlayouts.so.0.0.0
 
 libimlayouts.so.0.0.0: imlayouts.c imlayouts.h
-	$(CC) -Wall -fPIC $(CFLAGS) $(shell pkg-config --cflags --libs glib-2.0) --std=gnu99 -shared -Wl,-soname=libimlayouts.so.0 $^ -o $@
+	$(CC) -Wall -fPIC $(CFLAGS) $(shell pkg-config --cflags --libs glib-2.0) --std=gnu99 -shared -Wl,-soname=libimlayouts.so.0 $< -o $@
 
 clean:
 	$(RM) libimlayouts.so.0.0.0

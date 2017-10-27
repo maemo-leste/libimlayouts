@@ -19,7 +19,7 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 typedef struct _vkb_key vkb_key;
-typedef struct _vkb_key
+struct _vkb_key
 {
 	unsigned char gtk_state;
 	unsigned char unk1;
@@ -43,7 +43,7 @@ typedef struct _vkb_key
 	unsigned char num_sub_keys;
 	vkb_key *sub_keys;
 	unsigned char key_size;
-} ;
+};
 #define KEY_TYPE_NORMAL 0
 #define KEY_TYPE_SLIDING 1
 #define KEY_TYPE_MODIFIER 2
@@ -120,7 +120,7 @@ typedef struct _vkb_key_size
 typedef struct _vkb_layout_collection
 {
 	char version;
-	char num_layouts;
+	unsigned char num_layouts;
 	char *name;
 	char *lang;
 	char *wc;
@@ -128,9 +128,9 @@ typedef struct _vkb_layout_collection
 	int *layout_types;
 	int special_font;
 	unsigned short *offsets;
-	char num_key_sizes;
+	unsigned char num_key_sizes;
 	vkb_key_size *key_sizes;
-	char num_screen_modes;
+	unsigned char num_screen_modes;
 	unsigned char *screen_modes;
 } vkb_layout_collection;
 #define SCREEN_TYPE_NORMAL 0
@@ -155,10 +155,12 @@ void imlayout_vkb_free_layout_list(GSList *list);
 vkb_layout *imlayout_vkb_get_layout(vkb_layout_collection *collection, int layout_type);
 GSList *imlayout_vkb_get_layout_list();
 GSList *imlayout_vkb_get_layout_list_from_prefix(const gchar *path);
-signed int imlayout_vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section, int width, int height);
+int imlayout_vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section, int width, int height);
+int vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section);
 vkb_layout_collection *imlayout_vkb_load_file(const char *fname);
 void print_info(vkb_layout_collection *collection);
 void print_layout_info(vkb_layout *layout);
+void print_sublayout_info(vkb_sub_layout *layout);
 void add_key(vkb_keyboard_layout *layout);
 void add_keysection(vkb_keyboard_layout *layout_name);
 void add_keysize(vkb_keyboard_layout *layout);
