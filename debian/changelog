@@ -1,3 +1,9 @@
+libimlayouts (1.5.15) unsatable; urgency=low
+
+  * Some cleanups
+
+ -- Jonathan Wilson <jfwfreo@tpgi.com.au>  Sat, 28 Oct 2017 08:08:40 -0400
+
 libimlayouts (1.5.14) unsatable; urgency=low
 
   * Initial RE release.

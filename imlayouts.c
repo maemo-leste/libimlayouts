@@ -22,10 +22,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <glib.h>
+#include <assert.h>
 #include "imlayouts.h"
 
 GSList *imlayout_vkb_get_layout_list_from_prefix(const gchar *path)
 {
+  assert(0);
   return NULL;
   //todo
 }
@@ -52,6 +54,7 @@ void add_keysection(vkb_keyboard_layout *layout_name)
 
 void add_keysize(vkb_keyboard_layout *layout)
 {
+  assert(0);
   //todo
 }
 
@@ -73,11 +76,13 @@ void add_sublayout(vkb_keyboard_layout *layout)
 
 void print_info(vkb_layout_collection *collection)
 {
+  assert(0);
   //todo
 }
 
 void add_slide(vkb_keyboard_layout *layout, const char *src, int len)
 {
+  assert(0);
   //todo
 }
 
@@ -107,6 +112,7 @@ unsigned char *get_num_keys_in_row(vkb_keyboard_layout *layout)
 
 void imlayout_vkb_free_layout(vkb_layout *layout)
 {
+  assert(0);
   //todo
 }
 
@@ -122,6 +128,7 @@ void add_screen(vkb_keyboard_layout *layout)
 
 int imlayout_vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section, int width, int height)
 {
+  assert(0);
   return 0;
   //todo
 }
@@ -180,24 +187,28 @@ vkb_sub_layout *get_sublayout(vkb_keyboard_layout *layout)
 
 int vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section)
 {
+  assert(0);
   return 0;
   //todo
 }
 
 GSList *imlayout_vkb_get_layout_list()
 {
+  assert(0);
   return NULL;
   //todo
 }
 
 vkb_layout *imlayout_vkb_get_layout(vkb_layout_collection *collection, int layout_type)
 {
+  assert(0);
   return NULL;
   //todo
 }
 
 void print_sublayout_info(vkb_sub_layout *layout)
 {
+  assert(0);
   //todo
 }
 
@@ -208,47 +219,32 @@ void imlayout_vkb_free_layout_collection(vkb_layout_collection *collection)
 {
   if (collection)
   {
-    char *v1;
-    char *v2;
-    char *v3;
-    int *v4;
-    unsigned short *v5;
-    char *v6;
-    vkb_key_size *v7;
-    unsigned char *v8;
-    v1 = collection->name;
-    if ( v1 )
-      g_free(v1);
-    v2 = collection->lang;
-    if ( v2 )
-      g_free(v2);
-    v3 = collection->wc;
-    if ( v3 )
-      g_free(v3);
-    v4 = collection->layout_types;
-    if ( v4 )
-      g_free(v4);
-    v5 = collection->offsets;
-    if ( v5 )
-      g_free(v5);
-    v6 = collection->filename;
-    if ( v6 )
-      g_free(v6);
-    v7 = collection->key_sizes;
-    if ( v7 )
+    if (collection->name)
+      g_free(collection->name);
+    if (collection->lang)
+      g_free(collection->lang);
+    if (collection->wc)
+      g_free(collection->wc);
+    if (collection->layout_types)
+      g_free(collection->layout_types);
+    if (collection->offsets)
+      g_free(collection->offsets);
+    if (collection->offsets)
+      g_free(collection->offsets);
+    if (collection->key_sizes)
     {
-      g_free(v7);
+      g_free(collection->key_sizes);
       collection->key_sizes = 0;
     }
-    v8 = collection->screen_modes;
-    if ( v8 )
-      g_free(v8);
+    if (collection->screen_modes)
+      g_free(collection->screen_modes);
     g_free(collection);
   }
 }
 
 vkb_layout_collection *imlayout_vkb_load_file(const char *fname)
 {
+  assert(0);
   return NULL;
   //todo
 }
