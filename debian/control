@@ -16,7 +16,7 @@ Package: libimlayouts0-dev
 Section: devel
 Priority: extra
 Architecture: all
-Depends: libimlayouts0 (= ${binary:Version}), pkg-config
+Depends: libimlayouts0, pkg-config
 Description: IM Layouts Library dev package.
  Library for IM Layouts dev package.
 
