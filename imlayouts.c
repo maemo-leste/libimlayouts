@@ -284,9 +284,27 @@ vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section)
 GSList *
 imlayout_vkb_get_layout_list()
 {
-  assert(0);
-  return NULL;
-  //todo
+  GDir *dir = g_dir_open("/usr/share/keyboards", 0, NULL);
+  GSList *l = NULL;
+  const gchar *name;
+
+  if (!dir)
+    return NULL;
+
+  while ((name = g_dir_read_name(dir)))
+  {
+    if (g_str_has_suffix(name, ".vkb"))
+    {
+      gchar *layout = imlayout_vkb_get_file_layout(name, 0);
+
+      if (layout)
+        l = g_slist_append(l, layout);
+    }
+  }
+
+  g_dir_close(dir);
+
+  return l;
 }
 
 vkb_layout *
@@ -697,7 +715,8 @@ add_key(vkb_keyboard_layout *layout)
   }
 }
 
-void increase_num_keys_in_row(vkb_keyboard_layout *layout)
+void
+increase_num_keys_in_row(vkb_keyboard_layout *layout)
 {
   unsigned char *keys = get_num_keys_in_row(layout);
 
