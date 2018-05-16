@@ -181,13 +181,6 @@ get_num_keys_in_row(vkb_keyboard_layout *layout)
 }
 
 void
-imlayout_vkb_free_layout(vkb_layout *layout)
-{
-  assert(0);
-  //todo
-}
-
-void
 add_screen(vkb_keyboard_layout *layout)
 {
   unsigned char *modes = g_renew(unsigned char, layout->layout.screen_modes,
@@ -295,7 +288,7 @@ imlayout_vkb_get_layout_list()
   {
     if (g_str_has_suffix(name, ".vkb"))
     {
-      gchar *layout = imlayout_vkb_get_file_layout(name, 0);
+      gchar *layout = imlayout_vkb_get_file_layout(name, NULL);
 
       if (layout)
         l = g_slist_append(l, layout);
@@ -686,8 +679,8 @@ add_key(vkb_keyboard_layout *layout)
         newkey->special_font = 0;
         newkey->key_flags = 0;
         newkey->scancode = 0;
-        newkey->label = 0;
-        newkey->sub_keys = 0;
+        newkey->labels = NULL;
+        newkey->sub_keys = NULL;
         keysection->num_keys++;
       }
     }
@@ -763,4 +756,111 @@ void print_layout_info(vkb_layout *layout)
   }
   else
     puts("\tLayout is empty");
+}
+
+void
+imlayout_vkb_free_layout(vkb_layout *layout)
+{
+  if (!layout)
+    return;
+
+  if (layout->sub_layouts)
+  {
+    int i;
+
+    for (i = 0; i < layout->num_sub_layouts; i++)
+    {
+      vkb_sub_layout *sub_layout = &layout->sub_layouts[i];
+      int j;
+
+      if (sub_layout->label)
+      {
+        g_free(sub_layout->label);
+        sub_layout->label = NULL;
+      }
+
+      for (j = 0; j < sub_layout->num_key_sections; j++)
+      {
+        vkb_key_section *key_section = &sub_layout->key_sections[j];
+        int k;
+
+        if (!key_section)
+          continue;
+
+        if (key_section->num_keys_in_rows)
+        {
+          g_free(key_section->num_keys_in_rows);
+          key_section->num_keys_in_rows = NULL;
+        }
+
+        if (!key_section->keys)
+          continue;
+
+        for (k = 0; k < key_section->num_keys; k++)
+        {
+          vkb_key *key = &key_section->keys[k];
+          int l;
+
+          if (key->scancode)
+          {
+            g_free(key->scancode);
+            key->scancode = NULL;
+          }
+
+
+          if (key->labels)
+          {
+            if (key->key_type == KEY_TYPE_SLIDING)
+            {
+              for (l = 0; l < key->byte_count; l++)
+              {
+                gchar *label = key->labels[l];
+
+                if (label)
+                {
+                  g_free(label);
+                  key->labels[l] = NULL;
+                }
+              }
+            }
+
+            g_free(key->labels);
+            key->labels = NULL;
+          }
+
+          if (key->sub_keys)
+          {
+            for (l = 0; l < key->num_sub_keys; l++)
+            {
+              vkb_key *sub_key = &key->sub_keys[l];
+
+              if (sub_key->scancode)
+              {
+                g_free(sub_key->scancode);
+                sub_key->scancode = NULL;
+              }
+
+              if (sub_key->labels)
+              {
+                g_free(sub_key->labels);
+                sub_key->labels = NULL;
+              }
+            }
+
+            g_free(key->sub_keys);
+            key->sub_keys = NULL;
+          }
+        }
+
+        g_free(key_section->keys);
+        key_section->keys = NULL;
+      }
+
+      g_free(sub_layout->key_sections);
+    }
+  }
+
+  g_free(layout->sub_layouts);
+  layout->sub_layouts = NULL;
+  g_free(layout);
 }

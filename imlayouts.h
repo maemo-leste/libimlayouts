@@ -27,7 +27,7 @@ struct _vkb_key
 	unsigned char current_slide_key;
 	unsigned int width;
 	unsigned char byte_count;
-	char *label;
+	gchar **labels;
 	unsigned int special_font;
 	unsigned char key_type;
 	unsigned int left;
