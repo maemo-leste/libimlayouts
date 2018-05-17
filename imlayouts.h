@@ -64,7 +64,7 @@ struct _vkb_key
 
 typedef struct _vkb_key_section
 {
-	unsigned int num_keys;
+	unsigned char num_keys;
 	unsigned char num_rows;
 	unsigned char *num_keys_in_rows;
 	vkb_key *keys;
@@ -78,11 +78,11 @@ typedef struct _vkb_key_section
 
 typedef struct _vkb_sub_layout
 {
-	unsigned int type;
+	unsigned char type;
 	unsigned char variance_index;
 	unsigned char num_key_sections;
 	vkb_key_section *key_sections;
-	char *label;
+	gchar *label;
 	unsigned int hash;
 	unsigned int width;
 	unsigned int height;
@@ -93,8 +93,8 @@ typedef struct _vkb_sub_layout
 
 typedef struct _vkb_layout
 {
-	unsigned int type;
-	unsigned int numeric;
+	unsigned char type;
+	unsigned char numeric;
 	unsigned char num_sub_layouts;
 	vkb_sub_layout *sub_layouts;
 	unsigned char default_key_size;

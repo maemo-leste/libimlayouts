@@ -26,7 +26,7 @@
 #include "imlayouts.h"
 
 #define fread_check(var, fp) (fread(&var, sizeof(var), 1, fp) == sizeof(var))
-#define fread_check_size(var, size, fp) (fread(&var, size, 1, fp) == size)
+#define fread_check_size(var, size, fp) (fread(var, size, 1, fp) == size)
 
 static gchar *
 imlayout_vkb_get_file_layout(const gchar *fname, const gchar *path)
@@ -300,13 +300,253 @@ imlayout_vkb_get_layout_list()
   return l;
 }
 
+static int
+read_key(FILE *fp, vkb_key *key)
+{
+  if (!fread_check(key->key_type, fp))
+    return 0;
+
+  if (key->key_type != KEY_TYPE_MULTIPLE)
+  {
+    unsigned char c;
+
+    if (!fread_check(c, fp))
+      return 0;
+
+    key->key_flags = c;
+    if (c & 0x80)
+    {
+      if (!fread_check(c, fp))
+        return 0;
+
+      key->key_flags |= ((unsigned short)c) << 8;
+    }
+
+    if (!fread_check(key->byte_count, fp))
+      return 0;
+
+    if (key->byte_count & 0x80)
+    {
+      int i;
+      key->byte_count &= ~0x80;
+      key->labels = g_new0(gchar *, key->byte_count);
+
+      if (!key->labels)
+        return 0;
+
+      key->current_slide_key = 0;
+
+      for (i = 0; i < key->byte_count; i++)
+      {
+        unsigned char label_len;
+
+        if (!fread_check(label_len, fp))
+          return 0;
+
+        if (label_len)
+        {
+          gchar *label = g_new0(gchar, label_len + 1);
+
+          key->labels[i] = label;
+
+          if (!label)
+            return 0;
+
+          if (fread_check_size(label, label_len, fp))
+            return 0;
+        }
+      }
+    }
+    else
+    {
+      key->labels = (gchar **)g_new0(gchar, key->byte_count + 1);
+
+      if (!key->labels || !fread_check_size(key->labels, key->byte_count, fp))
+        return 0;
+    }
+
+    if (!fread_check(key->key_size, fp))
+      return 0;
+
+    if (!(key->key_flags & 0x100))
+      return 1;
+
+    if (!fread_check(key->scancode_length, fp))
+      return 0;
+
+    if (!key->scancode_length)
+      return 1;
+
+    key->scancode = g_new0(unsigned char, key->scancode_length);
+
+    if (!key->scancode)
+      return 0;
+
+    return fread_check_size(key->scancode, key->scancode_length, fp);
+  }
+  else
+  {
+    int i;
+
+    if (!fread_check(key->num_sub_keys, fp))
+      return 0;
+
+    key->sub_keys = g_new0(vkb_key, key->num_sub_keys);
+
+    if (!key->num_sub_keys)
+      return 1;
+
+    if (!key->sub_keys)
+      return 0;
+
+    for (i = 0; i < key->num_sub_keys; i++)
+    {
+      if (!read_key(fp, &key->sub_keys[i]))
+        return 0;
+    }
+
+    return 1;
+  }
+}
+
 vkb_layout *
 imlayout_vkb_get_layout(vkb_layout_collection *collection, int layout_type)
 {
-  assert(0);
-  return NULL;
-  //todo
+  __off_t offset = 0;
+  FILE *fp;
+  vkb_layout *layout;
+  int i;
+
+  if (!collection)
+    return NULL;
+
+  for (i = 0; i < collection->num_layouts; i++)
+  {
+    if (collection->layout_types[i] == layout_type)
+    {
+      offset = collection->offsets[i];
+      break;
+    }
+  }
+
+  if (i == collection->num_layouts)
+    return NULL;
+
+  fp = fopen(collection->filename, "rb");
+
+  if (!fp)
+    return NULL;
+
+  fseek(fp, offset, SEEK_SET);
+  layout = g_new0(vkb_layout, 1);
+
+  if (!layout)
+    goto error;
+
+  if (!fread_check(layout->type, fp) ||
+      !fread_check(layout->num_sub_layouts, fp) ||
+      !fread_check(layout->numeric, fp) ||
+      !fread_check(layout->default_key_size, fp))
+  {
+    goto error;
+  }
+
+  layout->sub_layouts = g_new0(vkb_sub_layout, layout->num_sub_layouts);
+
+  if (!layout->sub_layouts)
+    goto error;
+
+  for (i = 0; i < layout->num_sub_layouts; i++)
+  {
+    vkb_sub_layout *sub_layout = &layout->sub_layouts[i];
+    char label_len;
+    int j;
+
+    if (!fread_check(sub_layout->type, fp) ||
+        !fread_check(sub_layout->variance_index, fp) ||
+        !fread_check(label_len, fp))
+    {
+      break;
+    }
+
+    if (label_len)
+    {
+      sub_layout->label = g_new0(char, label_len + 1);
+
+      if (!sub_layout->label ||
+          !fread_check_size(sub_layout->label, label_len, fp))
+      {
+        break;
+      }
+    }
+
+    if (!fread_check(sub_layout->num_key_sections, fp) ||
+        !sub_layout->num_key_sections)
+    {
+      break;
+    }
+
+    sub_layout->key_sections =
+        g_new0(vkb_key_section, sub_layout->num_key_sections);
+
+    if (!sub_layout->key_sections)
+      break;
+
+    for (j = 0; j < sub_layout->num_key_sections; j++)
+    {
+      vkb_key_section *key_section = &sub_layout->key_sections[j];
+      int k;
+
+      if (!fread_check(key_section->num_keys, fp) ||
+          !fread_check(key_section->num_rows, fp) ||
+          !fread_check(key_section->margin_left, fp) ||
+          !fread_check(key_section->margin_top, fp) ||
+          !fread_check(key_section->margin_bottom, fp) ||
+          !fread_check(key_section->margin_right, fp))
+      {
+        goto error;
+      }
+
+      key_section->num_keys_in_rows =
+          g_new0(unsigned char, key_section->num_rows);
+
+      if (!key_section->num_keys_in_rows)
+        goto error;
+
+      if (!fread_check_size(key_section->num_keys_in_rows,
+                            key_section->num_rows, fp))
+      {
+        goto error;
+      }
+
+      if (!key_section->num_keys ||
+          !(key_section->keys = g_new0(vkb_key, key_section->num_keys)))
+      {
+        goto error;
+      }
+
+      for (k = 0; k < key_section->num_keys; k++)
+      {
+        vkb_key *key = &key_section->keys[k];
+
+        if (!read_key(fp, key))
+          goto error;
+      }
+    }
+  }
+
+  if (i < layout->num_sub_layouts)
+  {
+error:
+    imlayout_vkb_free_layout(layout);
+  }
+
+  fclose(fp);
+  vkb_init_buttons(collection, layout);
+
+  return layout;
 }
+
 
 void
 print_sublayout_info(vkb_sub_layout *layout)
@@ -355,7 +595,7 @@ static vkb_layout_collection *
 read_header(FILE *fp)
 {
   vkb_layout_collection *coll;
-  char unk[20];
+  char padding[20];
   unsigned char c;
   int i;
 
@@ -551,11 +791,8 @@ read_header(FILE *fp)
     goto cleanup;
   }
 
-  /* what are those 20 bytes ? */
-  if (fread_check(unk, fp))
-  {
+  if (!fread_check(padding, fp))
     goto cleanup;
-  }
 
   return coll;
 
@@ -673,7 +910,7 @@ add_key(vkb_keyboard_layout *layout)
         vkb_key *newkey = &key[keysection->num_keys];
 
         newkey->scancode_length = 0;
-        newkey->key_type = KEY_TYPE_HEXA;
+        newkey->key_type = KEY_TYPE_MULTIPLE;
         newkey->byte_count = 0;
         newkey->num_sub_keys = 0;
         newkey->special_font = 0;
@@ -806,7 +1043,6 @@ imlayout_vkb_free_layout(vkb_layout *layout)
             g_free(key->scancode);
             key->scancode = NULL;
           }
-
 
           if (key->labels)
           {
