@@ -21,8 +21,10 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 #include <assert.h>
+
 #include "imlayouts.h"
 
 #define fread_check(var, fp) (fread(&var, sizeof(var), 1, fp) == sizeof(var))
@@ -136,10 +138,67 @@ add_sublayout(vkb_keyboard_layout *layout)
   }
 }
 
-void print_info(vkb_layout_collection *collection)
+void
+print_info(vkb_layout_collection *collection)
 {
-  assert(0);
-  //todo
+  int i;
+
+  if (!collection)
+  {
+    puts("Layout collection is empty");
+    return;
+  }
+
+  printf("Name:\t\t\t%s\n", collection->name);
+  printf("Language:\t\t%s\n", collection->lang);
+  printf("WC:\t\t\t%s\n", collection->wc);
+  printf("Filename:\t\t%s\n", collection->filename);
+  printf("Num Layouts:\t\t%d\n", collection->num_layouts);
+  printf("Screen Modes:\t\t");
+
+  for (i = 0; i < collection->num_screen_modes;i++)
+  {
+    switch (collection->screen_modes[i])
+    {
+      case SCREEN_TYPE_NORMAL:
+        printf(" NORMAL ");
+        break;
+      case SCREEN_TYPE_THUMB:
+        printf(" FULL ");
+        break;
+      case SCREEN_TYPE_ROTATED:
+        printf(" ROTATED ");
+        break;
+      default:
+        printf(" UNKNOWN ");
+        break;
+    }
+  }
+
+  putchar('\n');
+  puts("Key sizes:");
+
+  for (i = 0; i < collection->num_key_sizes; i++)
+  {
+    vkb_key_size *key_size = &collection->key_sizes[i];
+
+    printf("Width %d, Height %d, Margins: %d:%d\n",
+           key_size->width, key_size->height, key_size->margin_left,
+           key_size->margin_top);
+  }
+
+  putchar('\n');
+  printf("Use special font:\t%s\n", collection->special_font ? "Yes" : "No");
+
+  if (collection->num_layouts && collection->offsets)
+  {
+    printf("Offsets:\t\t");
+
+    for (i = 0; i < collection->num_layouts; i++)
+      printf("%04X ", collection->offsets[i]);
+
+    putchar('\n');
+  }
 }
 
 void add_slide(vkb_keyboard_layout *layout, const char *src, int len)
@@ -551,8 +610,91 @@ error:
 void
 print_sublayout_info(vkb_sub_layout *layout)
 {
-  assert(0);
-  //todo
+  int i;
+
+  if (!layout)
+  {
+    puts("\t\tSublayout is empty");
+    return;
+  }
+
+  printf("\t\tVar index:\t\t\t%d\n", layout->variance_index);
+
+  if (layout->label)
+    printf("\t\tLabel:\t\t\t%s\n", layout->label);
+
+  printf("\t\tType:\t\t\t%d\n", layout->type);
+  printf("\t\tHash:\t\t\t%d\n", layout->hash);
+
+  for (i = 0; i < layout->num_key_sections; i++)
+  {
+    vkb_key_section *key_section = &layout->key_sections[i];
+    int j;
+
+    printf("\t\tSection:\t\t%d\n", i);
+    printf("\t\tNum Keys:\t\t%d\n", key_section->num_keys);
+    printf("\t\tNum Rows:\t\t%d\n", key_section->num_rows);
+    printf("\t\tMargins:\t\t%d:%d:%d:%d\n",
+           key_section->margin_left, key_section->margin_top,
+           key_section->margin_bottom, key_section->margin_right);
+
+
+    if (!key_section->num_rows)
+      continue;
+
+    printf("\t\tNum Keys in Rows:\t");
+
+    for (j = 0; j < key_section->num_rows; j++)
+      printf("%d ", key_section->num_keys_in_rows[j]);
+
+    putchar(10);
+
+    if (!key_section->num_keys)
+      continue;
+
+
+    for (j = 0; j < key_section->num_rows; j++)
+    {
+      int k;
+
+      printf("Row #%d: ", j);
+
+      for (k = 0; k < key_section->num_keys_in_rows[j]; k++)
+      {
+        vkb_key *key = &key_section->keys[k];
+
+        switch (key->key_type)
+        {
+          case KEY_TYPE_NORMAL:
+          case KEY_TYPE_MODIFIER:
+            printf(" %2s ", (gchar *)key->labels);
+            break;
+          case KEY_TYPE_SLIDING:
+          {
+            int l;
+
+            for (l = 0; l < key->byte_count; l++)
+              printf("{%s}", key->labels[l]);
+          }
+          case KEY_TYPE_MULTIPLE:
+          {
+            int l;
+
+            putchar('[');
+
+            for (l = 0; l < key->num_sub_keys; l++)
+              printf(".%s.", (gchar *)key->sub_keys[l].labels);
+
+            printf("] ");
+          }
+        }
+      }
+
+      putchar(10);
+    }
+
+    putchar(10);
+  }
 }
 
 void
