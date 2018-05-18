@@ -114,8 +114,14 @@ add_keysection(vkb_keyboard_layout *layout_name)
 void
 add_keysize(vkb_keyboard_layout *layout)
 {
-  assert(0);
-  //todo
+  layout->layout.key_sizes = g_renew(vkb_key_size, layout->layout.key_sizes,
+                                     layout->layout.num_key_sizes + 1);
+  if (layout->layout.key_sizes)
+  {
+    memset(&layout->layout.key_sizes[layout->layout.num_key_sizes], 0,
+           sizeof(layout->layout.key_sizes[0]));
+    layout->layout.num_key_sizes++;
+  }
 }
 
 void
