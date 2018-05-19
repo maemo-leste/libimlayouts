@@ -27,8 +27,8 @@
 
 #include "imlayouts.h"
 
-#define fread_check(var, fp) (fread(&var, sizeof(var), 1, fp) == sizeof(var))
-#define fread_check_size(var, size, fp) (fread(var, size, 1, fp) == size)
+#define fread_check(var, fp) (fread(&var, sizeof(var), 1, fp) == 1)
+#define fread_check_size(var, size, fp) (fread(var, size, 1, fp) == 1)
 
 static gchar *
 imlayout_vkb_get_file_layout(const gchar *fname, const gchar *path)
@@ -207,10 +207,15 @@ print_info(vkb_layout_collection *collection)
   }
 }
 
-void add_slide(vkb_keyboard_layout *layout, const char *src, int len)
+void
+add_slide(vkb_keyboard_layout *layout, const char *src, int len)
 {
-  assert(0);
-  //todo
+  vkb_key *key = get_key(layout);
+
+  key->labels = g_renew(gchar *, key->labels, key->byte_count + 1);
+  key->labels[key->byte_count] = g_malloc0(len + 1);
+  memcpy(key->labels[key->byte_count], src, len);
+  key->byte_count++;
 }
 
 void
@@ -259,13 +264,227 @@ add_screen(vkb_keyboard_layout *layout)
     printf("No memory %s\n", __FUNCTION__);
 }
 
+static int
+init_buttons(vkb_layout_collection *coll, vkb_sub_layout *sub_layout,
+             int width, int height, int flag)
+{
+  unsigned int hash;
+  int left;
+  int key_left;
+  int key_top;
+  int key_end;
+  vkb_key_size *key_size;
+  int key_right;
+  vkb_key_section *key_section;
+  vkb_key_size *key_sizes;
+  vkb_key *key;
+  int key_idx;
+  unsigned int key_width;
+  unsigned int key_height;
+  unsigned char *num_keys_in_rows;
+  unsigned int top;
+  unsigned int max_width;
+  unsigned int max_height;
+  unsigned int max_section_width;
+  unsigned int margin_height;
+  unsigned int section_width;
+  unsigned int max_key_height;
+  int section_idx;
+  unsigned int margin_left;
+  unsigned int margin_top;
+  unsigned int margin_bottom;
+  unsigned int margin_right;
+
+  if (flag)
+  {
+    key_sizes = coll->key_sizes;
+    key_width = 0;
+    key_height = 0;
+  }
+  else
+  {
+    int i;
+
+    key_width = (width << 16) / sub_layout->width;
+    key_height = (height << 16) / sub_layout->height;
+    key_sizes = g_new(vkb_key_size, coll->num_key_sizes);
+    memcpy(key_sizes, coll->key_sizes,
+           coll->num_key_sizes * sizeof(coll->key_sizes[0]));
+
+    for (i = 0; i < coll->num_key_sizes; i++)
+    {
+      vkb_key_size *key_size = &key_sizes[i];
+
+      key_size->margin_left = key_width * key_size->margin_left >> 16;
+      key_size->width = key_width * key_size->width >> 16;
+      key_size->margin_top = key_height * key_size->margin_top >> 16;
+      key_size->height = key_height * key_size->height >> 16;
+      key_size->baseline = key_height * key_size->baseline >> 16;
+    }
+  }
+
+  key_section = sub_layout->key_sections;
+
+  if (sub_layout->num_key_sections)
+  {
+    section_idx = 0;
+    hash = 0;
+    max_width = 0;
+    max_height = 0;
+    max_key_height = 0;
+    key = key_section->keys;
+
+    if (flag)
+      goto init_margins;
+
+loop:
+    margin_left = key_width * key_section->margin_left >> 16;
+    margin_right = key_width * key_section->margin_right >> 16;
+    margin_top = key_height * key_section->margin_top >> 16;
+    margin_bottom = key_height * key_section->margin_bottom >> 16;
+
+    while (1)
+    {
+      max_section_width = margin_left + margin_right;
+      margin_height = margin_top + margin_bottom;
+      num_keys_in_rows = key_section->num_keys_in_rows;
+      hash += max_width + margin_left;
+
+      if (key_section->num_keys)
+      {
+        int i;
+        top = margin_top;
+        left = max_width + margin_left;
+        section_width = margin_left + margin_right;
+
+        key_idx = 0;
+
+        for (i = 0; i < key_section->num_keys; i++)
+        {
+          key = &key_section->keys[i];
+
+          if (key->key_size >= coll->num_key_sizes)
+          {
+            g_warning("Invalid key size %d", key->key_size);
+            key_size = &key_sizes[0];
+          }
+          else
+            key_size = &key_sizes[key->key_size];
+
+          key_left = left + key_size->margin_left;
+          key->left = key_left;
+          key_right = key_size->width + key_left;
+          key->right = key_right;
+
+          key_top = key_size->margin_top;
+          key_height = key_size->height + key_top;
+          key->top = top + key_top;
+          key->bottom = key_height + top;
+          key->offset = key_size->baseline;
+          key_end = key_size->margin_left + key_size->width;
+          section_width += key_end;
+
+          hash += key_end + key_size->margin_top + key_size->height;
+
+          if (max_key_height < key_height)
+            max_key_height = key_height;
+
+          if (++key_idx < *num_keys_in_rows)
+          {
+            left = key_right;
+          }
+          else
+          {
+            if (!flag)
+            {
+              int w =
+                  (key_section->width * key_width >> 16) + 1 - section_width;
+
+              if (width < w + key_right)
+                w = width - key_right;
+
+              section_width += w;
+            }
+
+            if (max_section_width < section_width)
+              max_section_width = section_width;
+
+            margin_height += max_key_height;
+            top += max_key_height;
+
+            ++num_keys_in_rows;
+            left = max_width + margin_left;
+            key_idx = 0;
+            section_width = 0;
+          }
+          ++key;
+        }
+      }
+
+      if (flag == 1)
+        key_section->width = max_section_width;
+
+      hash += key_section->margin_left + key_section->margin_right +
+          key_section->margin_top + key_section->margin_bottom;
+
+      max_width += max_section_width;
+
+      if ( max_height < margin_height )
+        max_height = margin_height;
+
+      if (sub_layout->num_key_sections <= ++section_idx)
+        break;
+
+      key_section++;
+      key = key_section->keys;
+
+      if (!flag)
+        goto loop;
+
+init_margins:
+      margin_left = key_section->margin_left;
+      margin_top = key_section->margin_top;
+      margin_bottom = key_section->margin_bottom;
+      margin_right = key_section->margin_right;
+    }
+  }
+  else
+  {
+    hash = 0;
+    max_width = 0;
+    max_height = 0;
+  }
+
+  if (flag == 1)
+  {
+    sub_layout->width = max_width;
+    sub_layout->height = max_height;
+    sub_layout->hash = hash;
+  }
+  else
+    g_free(key_sizes);
+
+  return 0;
+}
+
 int
 imlayout_vkb_init_buttons(vkb_layout_collection *collection,
                           vkb_layout *section, int width, int height)
 {
-  assert(0);
+  int i;
+
+  if (!collection || !section || width <= 0 || height <= 0)
+    return -1;
+
+  for (i = 0; i < section->num_sub_layouts; i++)
+  {
+    vkb_sub_layout *sub_layout = &section->sub_layouts[i];
+
+    if (init_buttons(collection, sub_layout, width, height, 0) == -1)
+      return -1;
+  }
+
   return 0;
-  //todo
 }
 
 vkb_key_section *
@@ -334,9 +553,20 @@ get_sublayout(vkb_keyboard_layout *layout)
 int
 vkb_init_buttons(vkb_layout_collection *collection, vkb_layout *section)
 {
-  assert(0);
+  int i;
+
+  if (!collection || !section)
+    return -1;
+
+  for (i = 0; i < section->num_sub_layouts; i++)
+  {
+    vkb_sub_layout *sub_layout = &section->sub_layouts[i];
+
+    if (init_buttons(collection, sub_layout, 0, 0, 1) == -1)
+      return -1;
+  }
+
   return 0;
-  //todo
 }
 
 GSList *
@@ -709,6 +939,9 @@ imlayout_vkb_free_layout_collection(vkb_layout_collection *coll)
   if (coll)
   {
     if (coll->name)
+      g_free(coll->filename);
+
+    if (coll->name)
       g_free(coll->name);
 
     if (coll->lang)
@@ -719,9 +952,6 @@ imlayout_vkb_free_layout_collection(vkb_layout_collection *coll)
 
     if (coll->layout_types)
       g_free(coll->layout_types);
-
-    if (coll->offsets)
-      g_free(coll->offsets);
 
     if (coll->offsets)
       g_free(coll->offsets);
@@ -966,7 +1196,10 @@ imlayout_vkb_load_file(const char *fname)
   coll = read_header(fp);
 
   if (!coll)
-    goto cleanup;
+  {
+    fclose(fp);
+    return NULL;
+  };
 
   coll->filename = g_strdup(fname);
 
@@ -978,27 +1211,21 @@ imlayout_vkb_load_file(const char *fname)
 
       coll->layout_types[i] = LAYOUT_TYPE_NORMAL;
 
-
       if (!fread_check(type, fp))
-      {
-        g_log(0, G_LOG_LEVEL_WARNING, "error reading layout type");
-        goto cleanup;
-      }
+        goto error;
 
       coll->layout_types[i] = type;
     }
+    else
+      goto error;
   }
-
-cleanup:
-  if (coll)
-  {
-    imlayout_vkb_free_layout_collection(coll);
-    coll = NULL;
-  }
-
-  fclose(fp);
 
   return coll;
+
+error:
+  g_warning("error reading layout type");
+  imlayout_vkb_free_layout_collection(coll);
+  return NULL;
 }
 
 static void
