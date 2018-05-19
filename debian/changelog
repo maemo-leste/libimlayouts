@@ -1,3 +1,9 @@
+libimlayouts (1.5.16) unsatable; urgency=low
+
+  * Finish RE of functions needed so far
+
+ -- Ivaylo Dimitrov <ivo.g.dimitrov.75@gmail.com>  Sat, 19 May 2018 09:39:41 +0300
+
 libimlayouts (1.5.15) unsatable; urgency=low
 
   * Some cleanups
