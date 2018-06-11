@@ -1,3 +1,10 @@
+libimlayouts (1.5.17) unsatable; urgency=low
+
+  * fix a segfault if layout creation has failed
+  * do not try to fread() zero-sized blocks
+
+ -- Ivaylo Dimitrov <ivo.g.dimitrov.75@gmail.com>  Mon, 11 Jun 2018 16:40:23 +0300
+
 libimlayouts (1.5.16) unsatable; urgency=low
 
   * Finish RE of functions needed so far
