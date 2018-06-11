@@ -51,4 +51,7 @@ binary: build install
 	dh_md5sums
 	dh_builddeb
 
+build-arch: build
+binary-arch: binary
+
 .PHONY: build clean binary install
