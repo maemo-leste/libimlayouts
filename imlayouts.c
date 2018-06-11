@@ -834,10 +834,13 @@ imlayout_vkb_get_layout(vkb_layout_collection *collection, int layout_type)
   {
 error:
     imlayout_vkb_free_layout(layout);
+    layout = NULL;
   }
 
   fclose(fp);
-  vkb_init_buttons(collection, layout);
+
+  if (layout)
+    vkb_init_buttons(collection, layout);
 
   return layout;
 }
