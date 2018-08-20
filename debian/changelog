@@ -1,3 +1,9 @@
+libimlayouts (1.6.0) unsatable; urgency=low
+
+  * add vkb manipulation programs to -dev package
+
+ -- Ivaylo Dimitrov <ivo.g.dimitrov.75@gmail.com>  Mon, 20 Aug 2018 20:22:43 +0300
+
 libimlayouts (1.5.17) unsatable; urgency=low
 
   * fix a segfault if layout creation has failed
