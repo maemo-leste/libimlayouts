@@ -1,0 +1,154 @@
+vkb format for OS2007/OS2008/Maemo5
+
+- released into public domain (Permission is granted, free of charge, to any
+  person obtaining a copy of this file, to deal with the file without
+  restriction, including without limitation the right to use, copy, modify,
+  merge, publish, distribute, sublicense, and/or sell copies of it. The file
+  is provided "as is", without warranty of any kind.)
+- this is the third version of the document
+- changelog:
+  - v1: initial version based on reverse engineering of vkb files
+  - v2: revised using the excellent work by Kimmo Jukarainen,
+    http://idoru.metadreams.net/~kimju/src/maemo/decode_vkb/
+  - v3: added 0x80 key flag
+  - v4: added info about raw keys and missing key flags
+
+- multibyte fields are little endian
+- everything is utf-8 encoded
+- all numbers in the "description" column are written in hexadecimal
+- some (all?) length fields can be zero
+- strings are denoted as 1+n and are encoded as:
+	bytes	description
+	1	length of the next field, in bytes
+	n	the string (utf-8 encoded)
+
+GLOBAL HEADER
+bytes	description
+1	version (01)
+1	number of sections (02 for normal and thumb kbd, 01 for special kbd)
+1+n	descriptive (human-visible) name of the locale
+1+n	locale name (e.g. en_GB)
+1+n	locale name of a word completion dictionary
+1	number of screen modes supported by this keyboard (02)
+n	types of individual screen modes (1 byte each; types are:
+	0 = normal, 1 = thumb, 2 = rotated) (00 01)
+1	number of key sizes (05)
+...	KEY SIZE
+...	KEY SIZE
+	(default key sizes are:
+	23 23 1a 00 00  32 23 1a 00 00  37 23 1a 00 00  48 37 29 00 00  8f 37 29 00 00
+	that's: 00 normal key, 01 longer key used on the right side of odd
+	rows, 02 more longer key used on the left side of odd rows, 03 big
+	key used in thumb kbd, 04 double width big key used in thumb kbd)
+	(for special kbd, default key sizes are: 23 23 1a 00 00)
+2	absolute offset in the file of the first section
+2	absolute offset in the file of the second section
+	...
+20	zeros
+...	SECTION
+...	SECTION
+
+KEY SIZE
+bytes	description
+1	width of a key (in pixels? rather seems to be percentage or something)
+1	height of a key
+1	offset of a text (from the top of the key to the bottom of the text)
+	- i.e. baseline
+1	left padding (extra value, not included in the width)
+1	top padding (extra value, not included in the height)
+
+SECTION HEADER
+bytes	description
+1	type of the section (00 normal kbd, 01 special kbd, 04 thumb kbd;
+	other values: 03 large kbd, 05-07 east language kbds, 08 stroke kbd)
+1	number of layouts (02 for normal kbd, 04 for thumb kbd, 06 for special kbd)
+1	numeric kbd (00); the meaning of this field is unclear
+1	default key size (00 for normal kbd, 03 for thumb kbd, 00 for special kbd)
+...	LAYOUT
+...	LAYOUT
+
+LAYOUT HEADER
+bytes	description
+1	layout type (00 lowercase, 01 uppercase, 02 neither - i.e. special chars)
+	notes:
+	- in a special kbd, even tabs with letters are of the 02 type
+	- it seems to be hard-coded that the first two layouts in a special
+	  kbd have the shift key disabled
+1	corresponding other case layout number, counted from 0; ff for
+	a single case layout
+1+n	name of the layout (in normal kbd should be empty; in thumb kbd
+	should be 3 utf-8 chars; in special kbd corresponding lower/upper
+	layouts should have the same name)
+1	number of sublayouts (normal kbd has 2 sublayouts, thumb kbd and
+	special kbd have 1 sublayout)
+...	SUBLAYOUT
+...	SUBLAYOUT
+
+SUBLAYOUT HEADER
+bytes	description
+1	number of keys in the sublayout
+1	number of rows of the sublayout
+1	left margin (in pixels?) (9 for numeric kbd)
+1	top margin
+1	bottom margin
+1	right margin (seems that setting of margins affects also other
+	sublayout margins in some strange way)
+n	number of keys in individual rows (1 byte for each row)
+...	KEY
+...	KEY
+
+KEY
+bytes	description
+1	key type (00 normal key, 01 sliding key, 02 modifier key, 04 multiple key)
+...	these fields depend on the key type (KEY_NORMAL, KEY_SLIDING, etc.)
+
+KEY_NORMAL
+bytes	description
+1 or 2	FIELD_KEY_FLAGS
+1+n	letter
+1	key size
+if raw key flag is set
+1+n scancode data
+
+KEY_SLIDING
+bytes	description
+1 or 2	FIELD_KEY_FLAGS
+1	number of keys on the sliding key | 0x80
+1+n	letter
+1+n	letter
+	...
+1	key size
+if raw key flag is set
+1+n scancode data
+
+KEY_MODIFIER
+1 or 2	FIELD_KEY_FLAGS
+1+n	letter
+1	key size
+if raw key flag is set
+1+n scancode data
+
+KEY_MULTIPLE
+bytes	description
+1	number of keys
+...	KEY
+...	KEY
+
+FIELD_KEY_FLAGS
+bytes	description
+1	key flags (bitfield)
+	bits:	0 (0x01)	alpha
+		1 (0x02)	numeric
+		2 (0x04)	hexa
+		3 (0x08)	telephone
+		4 (0x10)	special
+		5 (0x20)	dead
+		6 (0x40)	whitespace
+		7 (0x80)	next byte is continuation of the flags
+1	present only if the previous field contains 0x80 flag:
+	more key flags (bitfield?)
+	bits:	0 (0x01)	raw key
+		1 (0x02)	tone
+		2 (0x04)	draw tab face over the key
+		3 (0x08)	draw backspace face over the key
+		4 (0x10)	draw shift face over the key
