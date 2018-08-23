@@ -1,3 +1,9 @@
+libimlayouts (1.6.1) unsatable; urgency=low
+
+  * build platform-specific -dev package
+
+ -- Ivaylo Dimitrov <ivo.g.dimitrov.75@gmail.com>  Tue, 23 Aug 2018 14:48:21 +0300
+
 libimlayouts (1.6.0) unsatable; urgency=low
 
   * add vkb manipulation programs to -dev package

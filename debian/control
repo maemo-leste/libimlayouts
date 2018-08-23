@@ -15,7 +15,7 @@ Description: IM Layouts Library
 Package: libimlayouts0-dev
 Section: devel
 Priority: extra
-Architecture: all
+Architecture: any
 Depends: ${shlibs:Depends}, libimlayouts0, pkg-config
 Description: IM Layouts Library dev package.
  Library for IM Layouts dev package.
