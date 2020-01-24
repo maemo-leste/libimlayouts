@@ -1,3 +1,9 @@
+libimlayouts (1.6.2) unsatable; urgency=low
+
+  * Fix GCC complaining
+
+ -- Merlijn Wajer <merlijn@wizzup.org>  Fri, 24 Jan 2020 15:10:05 +0100
+
 libimlayouts (1.6.1) unsatable; urgency=low
 
   * build platform-specific -dev package
