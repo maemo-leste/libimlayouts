@@ -28,7 +28,7 @@
 #include "imlayouts.h"
 
 #define fread_check(var, fp) (fread(&var, sizeof(var), 1, fp) == 1)
-#define fread_check_size(var, size, fp) (!size || (fread(var, size, 1, fp) == 1))
+#define fread_check_size(var, size, fp) (((size) == 0) || (fread(var, size, 1, fp) == 1))
 
 static gchar *
 imlayout_vkb_get_file_layout(const gchar *fname, const gchar *path)
