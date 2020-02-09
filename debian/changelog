@@ -1,3 +1,9 @@
+libimlayouts (1.6.3) unsatable; urgency=low
+
+  * port to debhelper 20
+
+ -- Ivaylo Dimitrov <ivo.g.dimitrov.75@gmail.com>  Sun, 09 Feb 2020 14:52:33 +0200
+
 libimlayouts (1.6.2) unsatable; urgency=low
 
   * Fix GCC complaining
