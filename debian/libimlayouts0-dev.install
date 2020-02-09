@@ -1,4 +1,6 @@
-debian/tmp/usr/bin/*
-debian/tmp/usr/include/*
-debian/tmp/usr/lib/pkgconfig/*
-debian/tmp/usr/lib/libimlayouts.so usr/lib/
+#!/usr/bin/dh-exec
+
+usr/bin/*
+usr/include/*
+usr/lib/pkgconfig/* usr/lib/${DEB_HOST_MULTIARCH}/pkgconfig
+usr/lib/*.so usr/lib/${DEB_HOST_MULTIARCH}

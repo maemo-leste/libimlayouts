@@ -2,12 +2,13 @@ Source: libimlayouts
 Section: libs
 Priority: extra
 Maintainer: Jonathan Wilson <jfwfreo@tpgi.com.au>
-Build-Depends: debhelper (>= 5), cdbs, libglib2.0-dev, libexpat1-dev
+Build-Depends: debhelper (>= 10), libglib2.0-dev, libexpat1-dev
 
 Package: libimlayouts0
 Section: libs
 Priority: extra
 Architecture: any
+Multi-Arch: same
 Depends: ${shlibs:Depends}
 Description: IM Layouts Library
  Library for IM Layouts.
@@ -16,14 +17,7 @@ Package: libimlayouts0-dev
 Section: devel
 Priority: extra
 Architecture: any
-Depends: ${shlibs:Depends}, libimlayouts0, pkg-config
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${perl:Depends}, libimlayouts0 (= ${binary:Version})
 Description: IM Layouts Library dev package.
  Library for IM Layouts dev package.
-
-Package: libimlayouts0-dbg
-Section: devel
-Priority: extra
-Architecture: any
-Depends: libimlayouts0 (= ${binary:Version}), pkg-config
-Description: IM Layouts Library Debug symbols
- Debug symbols for IM Layouts Library.
